@@ -1,12 +1,12 @@
 import pandas as pd
+from pathlib import Path
 import os
-os.chdir(os.path.dirname(os.getcwd()))
 
-cwd=os.getcwd()
+# set cwd to repository/project root (two levels above this file)
+cwd = str(Path(__file__).resolve().parents[1])
 from functions.csv_to_pandas import import_csv_to_df
 
-cwd=os.getcwd()
-
+print(f'Working directory set to: {cwd}')
 print('IMPORTING THE CSVs TO PANDAS DATAFRAMES')
 df_races = import_csv_to_df('source-data', 'races.csv')
 df_results = import_csv_to_df('source-data', 'results.csv')
