@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 
+
+
 def import_csv_to_df(file_path: str, csv_name: str, delimiter: str = ',', index_col: str = 'raceId') -> pd.DataFrame:
     """ Use pandas to import a CSV to a dataframe and set index if required. Current working directory is set to the project root for the user.
     Args:
@@ -24,6 +26,8 @@ def import_csv_to_df(file_path: str, csv_name: str, delimiter: str = ',', index_
     if not file_path.endswith('/'):
         file_path += '/'
     
+    
+    print(f'Testing file path: {file_path+csv_name}')
     """ Ensure the file path starts with a slash and ends with a slash"""  
     if file_path.startswith('/'):
         file_path = os.getcwd() + file_path
