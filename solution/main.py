@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from functions import import_csv_to_df
+from functions import import_csv_to_df, publish_df_to_aws_bucket_as_json
 
 # Set CWD to repository root.
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,8 +77,11 @@ del df_races, df_results, column_names, df_layout
 yrs = df["year"].unique()
 for yr in yrs:
     f_name = f"stats_{yr}.json"
-    print(f"Generating json file {f_name}")
-    df.loc[df["year"] == yr, df.columns != "year"].to_json(
+    try:
+        publish_df_to_aws_bucket_as_json(df.loc[df["year"] == yr], 'aws-bucket-name', f_name)   
+    except:
+        print(f"Generating json file {f_name}")
+        df.loc[df["year"] == yr, df.columns != "year"].to_json(
         f"{project_root}/results/{f_name}",
         orient="records",
         date_format="iso",

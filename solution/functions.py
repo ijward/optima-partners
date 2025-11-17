@@ -42,3 +42,33 @@ def import_csv_to_df(file_path: str, csv_name: str, delimiter: str = ',', index_
     if index_col:
         df.set_index(keys=index_col, inplace=True)
     return df
+
+def publish_df_to_aws_bucket_as_json(df: pd.DataFrame, bucket_name: str, file_name: str):
+    """ Publish a dataframe to an AWS S3 bucket as a JSON file.
+    Args:
+        df (pd.DataFrame): DataFrame to publish.
+        bucket_name (str): Name of the S3 bucket.
+        file_name (str): Name of the file to create in the S3 bucket.
+    """
+    import boto3
+    import io
+    
+    #Creating Session using Boto3
+    session = boto3.Session(
+            aws_access_key_id='<key ID>',           # Replace with your AWS access key ID
+            aws_secret_access_key='<secret_key>',   # Replace with your AWS secret access key   
+            region_name='uk-london'                 # Update AWS region as needed
+    )
+ 
+    #Create s3 session with boto3
+    s3 = session.resource('s3')
+    
+
+    #Convert DataFrame to JSON and upload to S3 bucket
+    json_buffer = io.StringIO()
+    try:
+        json_data = df.to_json(orient='records', date_format='iso')
+        s3.put_object(Bucket=bucket_name, Key=file_name, Body=json_data)
+        print(f"Successfully published {file_name} to bucket {bucket_name}.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
