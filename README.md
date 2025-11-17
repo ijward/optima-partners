@@ -5,13 +5,15 @@ This repository is for the Optima Partners engineering assignments assessment. S
 
 ## Project layout
 
-- `source-data/` : Raw CSV inputs used by the analysis. Key files:
+- `source-data/`   : Raw CSV inputs used by the analysis. Key files:
   - `races.csv` — high-level data for each race including date and time. Requirements are to combine date and time as one utc field, where null, time can be set as 00:00:00
   - `results.csv` — finishing position of each driver per race including fastest lap.
-- `results/`    : Generated outputs (JSON files) by year, e.g. `stats_2018.json` through `stats_2024.json`.
-- `solution/`   :
+- `results/`       : Generated outputs (JSON files) by year, e.g. `stats_2018.json` through `stats_2024.json`.
+- `solution/`      : Containing the primary scripting for the process,
   - `main.py` — script to import the CSVs and join based on `raceId`. Filters results to include only race winners (position = 1) and creates one JSON file per year with race statistics.
-  - `functions.py` — contains the `import_csv_to_df()` function for importing CSV files to pandas DataFrames with configurable delimiters and index columns.
+  - `functions.py` :
+    — `import_csv_to_df()` function for importing CSV files to pandas DataFrames with configurable delimiters and index columns.
+    - `publish_df_to_aws_bucket_as_json()` function for pushing JSON files to S3 bucket instead of/as well as outputting them to results/. **Configuration still required before this can be used. Execution code is currently commented out in main.py**
 
 ## Quick Start
 
@@ -19,7 +21,8 @@ This repository is for the Optima Partners engineering assignments assessment. S
 
 - Python 3.13.9 or higher
 - pandas library
-- Git (to clone the repository)
+- boto3 library (only when progressing to pushing to AWS bucket)
+- Git
 
 ### Installation and Setup
 
