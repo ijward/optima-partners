@@ -1,0 +1,90 @@
+name: Sync Agents to Target Repositories
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/agents/**/*.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (print what would be synced without pushing)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  sync:
+    name: Sync agent files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Read target repositories
+        id: targets
+        run: |
+          if [ ! -f .github/sync-agents-targets.txt ]; then
+            echo "No target repositories configured. Create .github/sync-agents-targets.txt with one 'owner/repo' per line."
+            exit 1
+          fi
+          # Strip blank lines and comments
+          targets=$(grep -v '^\s*#' .github/sync-agents-targets.txt | grep -v '^\s*$' || true)
+          if [ -z "$targets" ]; then
+            echo "No target repositories listed in .github/sync-agents-targets.txt. Nothing to sync."
+            exit 0
+          fi
+          echo "Targets found:"
+          echo "$targets"
+          echo "targets<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$targets" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Sync agents to each target repository
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "ERROR: Secret SYNC_TOKEN is not set. Add a GitHub Personal Access Token with 'repo' scope as a secret named SYNC_TOKEN."
+            exit 1
+          fi
+
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          while IFS= read -r target; do
+            [ -z "$target" ] && continue
+
+            echo "──────────────────────────────────────"
+            echo "Syncing agents to: $target"
+
+            WORK_DIR=$(mktemp -d)
+            git clone --depth 1 "https://x-access-token:${SYNC_TOKEN}@github.com/${target}.git" "$WORK_DIR"
+
+            mkdir -p "$WORK_DIR/.github/agents"
+            cp .github/agents/*.md "$WORK_DIR/.github/agents/" 2>/dev/null || echo "No .md agent files to copy."
+
+            cd "$WORK_DIR"
+
+            if git diff --quiet && git diff --cached --quiet; then
+              echo "No changes for $target — already up to date."
+            else
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "[DRY RUN] Would commit and push the following changes to $target:"
+                git diff
+              else
+                git add .github/agents/
+                git commit -m "chore: sync Copilot agent files from ${{ github.repository }}"
+                git push
+                echo "Successfully synced agents to $target."
+              fi
+            fi
+
+            cd - > /dev/null
+            rm -rf "$WORK_DIR"
+          done <<< "${{ steps.targets.outputs.targets }}"
