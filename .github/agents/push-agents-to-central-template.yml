@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TEMPLATE: Push agent changes back to the central repository
+#
+# INSTRUCTIONS
+# 1. Copy this file to .github/workflows/push-agents-to-central.yml in EACH
+#    repository that should participate in the bidirectional agent sync.
+# 2. Set CENTRAL_REPO below to the owner/repo that holds the master copy of
+#    the agents (e.g. ijward/optima-partners).
+# 3. Add a repository secret named SYNC_TOKEN containing a GitHub Personal
+#    Access Token with "Contents: Read and write" on the central repository.
+#
+# HOW IT WORKS
+# When an agent (.md) file is changed and pushed to main in THIS repository,
+# this workflow commits those changes to the central repository.
+# The central repository's sync-agents.yml workflow then fans the update out
+# to every other repository listed in its sync-agents-targets.txt file,
+# keeping all repositories in sync automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Push Agent Changes to Central Repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/agents/**/*.md'
+
+jobs:
+  push-to-central:
+    name: Push agents to central repo
+    runs-on: ubuntu-latest
+    # Skip commits that were themselves made by the sync workflow to prevent
+    # an infinite loop between this workflow and the central fan-out.
+    if: "!contains(github.event.head_commit.message || '', 'chore: sync Copilot agent files')"
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Push agent changes to central repository
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          # ── UPDATE THIS if your central repository changes ─────────────────
+          CENTRAL_REPO: ijward/optima-partners
+          # ───────────────────────────────────────────────────────────────────
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "ERROR: Secret SYNC_TOKEN is not set."
+            echo "Add a GitHub Personal Access Token with 'Contents: Read and write' on"
+            echo "$CENTRAL_REPO as a repository secret named SYNC_TOKEN."
+            exit 1
+          fi
+
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          WORK_DIR=$(mktemp -d)
+          git clone --depth 1 "https://x-access-token:${SYNC_TOKEN}@github.com/${CENTRAL_REPO}.git" "$WORK_DIR"
+
+          mkdir -p "$WORK_DIR/.github/agents"
+          cp .github/agents/*.md "$WORK_DIR/.github/agents/" 2>/dev/null || echo "No .md agent files to copy."
+
+          cd "$WORK_DIR"
+
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to push to $CENTRAL_REPO — already up to date."
+          else
+            git add .github/agents/
+            git commit -m "chore: sync Copilot agent files from ${{ github.repository }}"
+            git push
+            echo "Successfully pushed agent changes to $CENTRAL_REPO."
+            echo "The central sync workflow will now fan the update out to all other repositories."
+          fi
+
+          rm -rf "$WORK_DIR"

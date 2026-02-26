@@ -13,28 +13,73 @@ For more information on creating and using agents, see the [GitHub Copilot docum
 
 ## Keeping agents in sync across repositories
 
-A GitHub Actions workflow (`.github/workflows/sync-agents.yml`) automatically pushes any changes made to this directory into every repository listed in `.github/sync-agents-targets.txt`.
+Two GitHub Actions workflows together keep agent files identical in every repository — changes made in **any** repo flow to **all** others automatically.
+
+```
+ ┌──────────────────────────────┐
+ │  Any target repo             │
+ │  .github/agents/*.md changed │
+ └─────────────┬────────────────┘
+               │ push-agents-to-central-template.yml
+               ▼
+ ┌──────────────────────────────┐
+ │  ijward/optima-partners      │  ← central / source of truth
+ │  .github/agents/ updated     │
+ └─────────────┬────────────────┘
+               │ sync-agents.yml (fan-out)
+               ▼
+ ┌──────────────────────────────┐
+ │  All other repos updated     │
+ └──────────────────────────────┘
+```
 
 ### One-time setup
 
-1. **Create a Personal Access Token (PAT)**
-   - Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens** (or classic tokens with `repo` scope).
-   - Grant the token **Contents: Read and write** permission for every repository you want to sync to.
+#### 1. Create a Personal Access Token (PAT)
 
-2. **Add the PAT as a repository secret**
-   - In *this* repository go to **Settings → Secrets and variables → Actions → New repository secret**.
-   - Name: `SYNC_TOKEN`
-   - Value: your PAT from step 1.
+Go to **GitHub → Settings → Developer settings → Personal access tokens** and create either:
+- A **fine-grained token** with **Contents: Read and write** permission scoped to this central repository and every target repository, or
+- A **classic token** with the `repo` scope.
 
-3. **List target repositories**
-   - Open `.github/sync-agents-targets.txt`.
-   - Add one `owner/repo` entry per line for every repository that should receive the agents.
+Grant access to **this central repository and every target repository**.
 
-That's it. The next time you push a change to any `.md` file in this directory, the workflow will automatically create a commit in each target repository with the updated agent files.
+#### 2. Add the PAT as a secret to every repository in the group
+
+In **each** repository (including this one) go to **Settings → Secrets and variables → Actions → New repository secret**:
+- Name: `SYNC_TOKEN`
+- Value: your PAT from step 1.
+
+#### 3. List target repositories (central repo only)
+
+- Open `.github/sync-agents-targets.txt` in this repository.
+- Add one `owner/repo` entry per line for every repository that should receive agent updates.
+
+#### 4. Install the push-back workflow in each target repository
+
+In **each target repository** (not this one), copy the template file and rename it:
+
+```
+.github/agents/push-agents-to-central-template.yml
+         ↓  copy to
+.github/workflows/push-agents-to-central.yml
+```
+
+Open the copy and update the `CENTRAL_REPO` variable at the top to match this repository (`ijward/optima-partners`).
+
+---
+
+Once set up, the sync works in both directions:
+
+| Where the change is made | What happens |
+|---|---|
+| This central repo | `sync-agents.yml` pushes the update to every repo in `sync-agents-targets.txt` |
+| Any target repo | `push-agents-to-central.yml` pushes the update to this central repo, which then fans it out to all other repos |
+
+A loop-guard on both workflows means commits created by the sync bot will not trigger another sync cycle.
 
 ### Manual sync
 
-You can also trigger a sync at any time without making a code change:
+You can also trigger a full fan-out at any time without making a code change:
 
 1. Go to **Actions → Sync Agents to Target Repositories**.
 2. Click **Run workflow**.
