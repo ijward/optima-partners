@@ -1,0 +1,9 @@
+# List the repositories that should receive a copy of the agent files
+# whenever .github/agents/ changes in this repository.
+#
+# Format: one "owner/repo" per line.
+# Lines starting with # are ignored.
+#
+# Example:
+#   ijward/my-other-repo
+#   ijward/another-project
