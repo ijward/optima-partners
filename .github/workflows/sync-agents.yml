@@ -47,6 +47,7 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Sync agents to each target repository
+        if: steps.targets.outputs.targets != ''
         env:
           SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
