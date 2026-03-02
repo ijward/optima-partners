@@ -1,9 +1,11 @@
 # Centralized CSS Architecture
 
 ## Purpose
+
 Patterns for building scalable CSS systems in Flask applications. Emphasizes SCSS preprocessing, reusable class libraries, and eliminating inline styles for consistent, maintainable styling at scale.
 
 ## When to Use
+
 - Establishing consistent design system across web application
 - Organizing CSS for teams building multiple pages/features
 - Managing theming, colors, typography, and spacing systematically
@@ -11,6 +13,7 @@ Patterns for building scalable CSS systems in Flask applications. Emphasizes SCS
 - Supporting multiple viewport sizes and accessibility requirements
 
 ## Core Concepts
+
 - **CSS Preprocessing (SCSS)**: Variables, mixins, nesting for DRY CSS code
 - **Utility-First Classes**: Small, single-purpose classes (spacing, colors, layout)
 - **Component Classes**: Semantic classes for UI elements (btn, card, modal)
@@ -20,6 +23,7 @@ Patterns for building scalable CSS systems in Flask applications. Emphasizes SCS
 ## Reference Examples
 
 ### SCSS Organization Structure
+
 ```scss
 // styles/main.scss - Main entry point
 @import 'tokens/colors';
@@ -53,6 +57,7 @@ $colors: (
 ```
 
 ### Reusable Component Classes
+
 ```html
 <!-- NO INLINE STYLES -->
 <!-- ✗ AVOID -->
@@ -67,6 +72,7 @@ $colors: (
 ```
 
 ### SCSS Button Component
+
 ```scss
 // styles/components/_button.scss
 .btn {
@@ -97,6 +103,7 @@ $colors: (
 ```
 
 ## Common Pitfalls
+
 - **Inline Styles**: Scattered styling logic makes maintenance hard; centralize in stylesheets
 - **Magic Numbers**: Hardcoded pixel values; use design tokens and SCSS variables
 - **CSS Duplication**: Similar rules repeated; leverage mixins and utility classes
@@ -106,11 +113,13 @@ $colors: (
 - **Large Stylesheet**: Single CSS file becomes unmaintainable; split by component/concern
 
 ## Dependencies
+
 - **SCSS Compiler**: `pip install libsass` or use Node.js `sass` package
 - **PostCSS** (optional): For vendor prefixes and CSS optimization
 - **Flask-Assets**: `pip install Flask-Assets` for automatic SCSS compilation in Flask
 
 ## Limitations
+
 - SCSS compilation adds build step; requires preprocessing before deployment
 - Utility-first approach increases HTML class attributes (semantic tradeoff)
 - Design tokens require discipline; team must follow conventions

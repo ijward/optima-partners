@@ -1,8 +1,0 @@
-testcov/
-results/
-solution/__pycache__/
-.coverage
-.pytest_cache/
-.DS_Store
-solution/__pycache__
-tests/__pycache__

@@ -33,6 +33,18 @@ Phases: `Planning` | `Development` | `Testing` | `Security` | `Deployment` | `Ge
 
 ## Log Entries
 
+### [2026-03-02] Testing — Proactive VS Code Diagnostics Monitoring
+
+**What happened**: Markdown linting errors (229 issues) were found in skill files. Rather than waiting for user reports, A9 Testing Manager should scan for VS Code diagnostics proactively using the `get_errors` tool.
+
+**Root cause / reason**: Quality issues can accumulate undetected if validation workflows only check syntax/structure but don't monitor IDE-level diagnostics (linting errors, formatting warnings, etc.).
+
+**Recommendation**: A9 Testing Manager must include VS Code error checking as part of validation workflow. Use `get_errors` tool to scan files before declaring validation complete. This catches formatting issues, linting errors, and other problems before deployment.
+
+**Applied to**: A9 Testing Manager
+
+---
+
 ### [2026-03-02] Development — Skills Library Initialized (XML, DataBricks, Web/UI Flask)
 
 **What happened**: A9 successfully created and deployed a core skills library containing 13 markdown files across 3 domains (XML, DataBricks, Web/UI Flask). Each skill file includes Purpose, When to Use, Core Concepts, Reference Examples, Common Pitfalls, Dependencies, and Limitations sections. Files were initially created, remediated for word-count compliance (2 files reduced from 700+ words to <500), validated, committed to main branch, and the sync workflow was updated to include `.github/skills/**` in the sync paths.

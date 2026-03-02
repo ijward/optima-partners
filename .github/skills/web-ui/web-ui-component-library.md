@@ -1,15 +1,18 @@
 # Web/UI Component Library
 
 ## Purpose
+
 Reusable UI component patterns using Flask Jinja2 templates. Templates for headers, forms, modals, tables with consistent styling and behavior.
 
 ## When to Use
+
 - Building consistent UI across Flask pages
 - Reducing template duplication with components
 - Creating forms with validation and error handling
 - Rapid feature development with pre-built components
 
 ## Core Concepts
+
 - **Template Inheritance**: Base templates with block extension
 - **Jinja2 Macros**: Reusable template functions for components
 - **Props Pattern**: Parameters passed like React props
@@ -19,6 +22,7 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 ## Reference Examples
 
 ### Base Template
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -32,6 +36,7 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 ```
 
 ### Button and Form Macros
+
 ```html
 {% macro button(text, type='button', classes='btn-primary', url=None) %}
   {% if url %}
@@ -59,6 +64,7 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 ```
 
 ### Table and Other Components
+
 ```html
 {% macro data_table(items, columns, actions_url=None) %}
   <table class="table">
@@ -73,6 +79,7 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 ```
 
 ### Usage Pattern
+
 ```html
 {% extends 'base.html' %}
 {% from 'buttons.html' import button %}
@@ -86,6 +93,7 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 ```
 
 ## Common Pitfalls
+
 - Overly complex macros; keep parameters focused
 - Logic in templates; move to views instead
 - Missing defaults on optional parameters
@@ -94,11 +102,13 @@ Reusable UI component patterns using Flask Jinja2 templates. Templates for heade
 - No component documentation
 
 ## Dependencies
+
 - **Flask**: `pip install Flask` (includes Jinja2)
 - **WTForms**: `pip install WTForms` (for form components)
 - **Jinja2**: Filters, tests, syntax reference
 
 ## Limitations
+
 - Less powerful than React/Vue frameworks
 - Server-side rendering can add latency
 - Client-side interactivity requires separate JS

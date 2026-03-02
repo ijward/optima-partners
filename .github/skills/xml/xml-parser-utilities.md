@@ -1,9 +1,11 @@
 # XML Parser Utilities
 
 ## Purpose
+
 Reference patterns for efficiently parsing XML documents, extracting specific elements, and handling various XML structures using industry-standard libraries and techniques.
 
 ## When to Use
+
 - Extracting data from complex XML documents or API responses
 - Parsing configuration files in XML format
 - Selecting specific elements using XPath queries
@@ -11,6 +13,7 @@ Reference patterns for efficiently parsing XML documents, extracting specific el
 - Building custom data extraction workflows
 
 ## Core Concepts
+
 - **DOM Parsing**: Load entire XML tree; best for small-to-medium documents with frequent random access
 - **SAX Parsing**: Event-driven streaming; memory-efficient for large documents
 - **XPath Expressions**: Powerful element selection using path syntax (`//element[@attr='value']`)
@@ -20,6 +23,7 @@ Reference patterns for efficiently parsing XML documents, extracting specific el
 ## Reference Examples
 
 ### Python - ElementTree (Built-in)
+
 ```python
 import xml.etree.ElementTree as ET
 
@@ -33,6 +37,7 @@ for product in expensive:
 ```
 
 ### Python - lxml (Advanced)
+
 ```python
 from lxml import etree
 
@@ -46,6 +51,7 @@ for p in products:
 ```
 
 ### Streaming Large Files (SAX)
+
 ```python
 import xml.sax
 from xml.sax.handler import ContentHandler
@@ -60,6 +66,7 @@ xml.sax.parse('large_file.xml', handler)
 ```
 
 ## Common Pitfalls
+
 - **Namespace Issues**: Forgetting to handle XML namespaces in XPath queries; always include namespace prefix
 - **Memory Overflow**: Using DOM parsing on very large files; switch to SAX streaming instead
 - **Encoding Problems**: Not specifying encoding when opening files; use `encoding='utf-8'` explicitly
@@ -67,10 +74,12 @@ xml.sax.parse('large_file.xml', handler)
 - **Missing Error Handling**: Not catching parsing exceptions; wrap parse operations in try-except blocks
 
 ## Dependencies
+
 - **Built-in**: `xml.etree.ElementTree` (Python standard library)
 - **Third-party**: `lxml` (high performance), `BeautifulSoup` (flexible), `xmltodict` (dict conversion)
 
 ## Limitations
+
 - XML namespaces require special handling
 - XPath performance degrades on very complex documents
 - Streaming parsers don't support random access to elements

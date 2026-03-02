@@ -1,9 +1,11 @@
 # XML Transformer Patterns
 
 ## Purpose
+
 Reference patterns for transforming XML documents using XPath/XSLT and converting between XML and other formats (JSON, CSV, plain text).
 
 ## When to Use
+
 - Converting API responses from XML to JSON/CSV for downstream processing
 - Applying complex structural transformations using XSLT
 - Extracting and reformatting specific data from XML sources
@@ -11,6 +13,7 @@ Reference patterns for transforming XML documents using XPath/XSLT and convertin
 - Building ETL pipelines with format conversion steps
 
 ## Core Concepts
+
 - **XPath**: Query language for selecting elements, attributes, and text nodes
 - **XSLT**: XML transformation language; powerful but steep learning curve
 - **Element Mapping**: Direct field-to-field transformation between formats
@@ -20,6 +23,7 @@ Reference patterns for transforming XML documents using XPath/XSLT and convertin
 ## Reference Examples
 
 ### XPath + Python to JSON
+
 ```python
 from lxml import etree
 import json
@@ -41,6 +45,7 @@ with open('output.json', 'w') as f:
 ```
 
 ### XML to CSV (Flattening)
+
 ```python
 import csv
 from lxml import etree
@@ -62,6 +67,7 @@ with open('output.csv', 'w', newline='') as f:
 ```
 
 ### XSLT Transformation (Template-based)
+
 ```xml
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
@@ -79,6 +85,7 @@ with open('output.csv', 'w', newline='') as f:
 ```
 
 ## Common Pitfalls
+
 - **Namespace Handling**: Forgetting namespaces in XPath expressions; use namespace maps
 - **Type Conversion**: Not handling type conversions when moving to JSON/CSV; explicitly cast values
 - **Large Document Memory**: XSLT in-memory processing can overflow; use streaming for large files
@@ -87,12 +94,14 @@ with open('output.csv', 'w', newline='') as f:
 - **Lossy Transformation**: Converting hierarchical XML to flat CSV loses structure; document limitations
 
 ## Dependencies
+
 - **lxml**: `pip install lxml` (XPath, XSLT support)
 - **xmltodict**: `pip install xmltodict` (quick XML-to-dict conversion)
 - **Saxon**: XSLT processor for complex stylesheet needs
 - **Python xml.etree**: Built-in basic XSLT support
 
 ## Limitations
+
 - XSLT steep learning curve; simpler transformations better with Python
 - XPath performance degrades on complex queries and large documents
 - Some XML-to-JSON conversions lose type information (all strings in CSV)

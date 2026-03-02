@@ -1,9 +1,11 @@
 # XML Validator Rules
 
 ## Purpose
+
 Patterns and practices for validating XML documents against schemas, implementing custom validation rules, and ensuring data quality across workflows.
 
 ## When to Use
+
 - Validating XML against XSD schemas before data processing
 - Implementing business rule validation on XML documents
 - Enforcing data quality standards in ETL pipelines
@@ -11,6 +13,7 @@ Patterns and practices for validating XML documents against schemas, implementin
 - Building compliance checks for regulated data
 
 ## Core Concepts
+
 - **XSD (Schema)**: Define element structure, data types, and constraints; most common validation method
 - **DTD (Document Type Definition)**: Legacy but still used; defines allowed elements and document structure
 - **Schematron**: Rule-based validation; excellent for business logic constraints
@@ -20,6 +23,7 @@ Patterns and practices for validating XML documents against schemas, implementin
 ## Reference Examples
 
 ### XSD Validation (Python)
+
 ```python
 from lxml import etree
 
@@ -37,6 +41,7 @@ else:
 ```
 
 ### Custom Python Validation
+
 ```python
 def validate_product_xml(xml_file):
     tree = etree.parse(xml_file)
@@ -57,6 +62,7 @@ def validate_product_xml(xml_file):
 ```
 
 ### Schematron Example (Business Rules)
+
 ```xml
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron">
   <sch:pattern id="business_rules">
@@ -70,6 +76,7 @@ def validate_product_xml(xml_file):
 ```
 
 ## Common Pitfalls
+
 - **Namespace Mismatches**: Schema and document use different namespace URIs; ensure alignment
 - **Missing Schema Resources**: XSD imports/includes not accessible; provide absolute paths
 - **Overly Broad Schemas**: Schemas too permissive; use minOccurs, maxOccurs, and restrictions
@@ -77,11 +84,13 @@ def validate_product_xml(xml_file):
 - **Performance Issues**: Validating large batches sequentially; batch validate in parallel when possible
 
 ## Dependencies
+
 - **lxml**: `pip install lxml` (XSD, DTD validation)
 - **xmlschema**: `pip install xmlschema` (alternative XSD validator)
 - **Oxygen XML**: Commercial tool for schema design and validation UI
 
 ## Limitations
+
 - XSD schemas can become complex; design simple, maintainable schemas
 - Custom validation logic may not scale to very large documents
 - Schematron requires XSLT processing; adds complexity

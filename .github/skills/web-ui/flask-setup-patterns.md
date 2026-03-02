@@ -1,9 +1,11 @@
 # Flask Setup Patterns
 
 ## Purpose
+
 Reference patterns for setting up Flask project structure, organizing routing with blueprints, implementing configuration management, and establishing scalable application architecture.
 
 ## When to Use
+
 - Initializing new Flask projects with production-ready structure
 - Organizing routes logically across multiple feature modules
 - Separating configuration for different environments (dev, test, prod)
@@ -11,6 +13,7 @@ Reference patterns for setting up Flask project structure, organizing routing wi
 - Scaling applications beyond single-file prototypes
 
 ## Core Concepts
+
 - **Application Factory**: Create app instances with configuration; supports testing and multiple environments
 - **Blueprints**: Modular organization of routes, templates, and static files by feature
 - **Configuration Management**: Environment-based settings (DEBUG, DATABASE_URL, API_KEYS)
@@ -20,6 +23,7 @@ Reference patterns for setting up Flask project structure, organizing routing wi
 ## Reference Examples
 
 ### Application Factory Pattern
+
 ```python
 # app/__init__.py
 from flask import Flask
@@ -50,6 +54,7 @@ def list_products():
 ```
 
 ### Configuration Management
+
 ```python
 # config.py
 import os
@@ -73,6 +78,7 @@ app = create_app(os.getenv('FLASK_ENV', 'development'))
 ```
 
 ### Blueprint with Error Handlers
+
 ```python
 from flask import Blueprint, render_template
 from werkzeug.exceptions import NotFound
@@ -92,6 +98,7 @@ def handle_not_found(error):
 ```
 
 ## Common Pitfalls
+
 - **Monolithic Routes**: Cramming all routes in single file; use blueprints for organization
 - **Hardcoded Config**: Embedding settings in code; use environment variables
 - **Circular Imports**: Importing app in modules that get imported at app creation; use factory pattern
@@ -100,12 +107,14 @@ def handle_not_found(error):
 - **Static Files Confusion**: Not organizing static files by blueprint; follow standard structure
 
 ## Dependencies
+
 - **Flask**: `pip install Flask` (core framework)
 - **Flask-SQLAlchemy**: `pip install Flask-SQLAlchemy` (database ORM)
 - **Python-dotenv**: `pip install python-dotenv` (load environment variables)
 - **Werkzeug**: Included with Flask; handles HTTP utilities and exceptions
 
 ## Limitations
+
 - Blueprint registration must happen at app creation time; dynamic registration limited
 - Configuration class inheritance can become complex for many environments
 - Error handlers in blueprints don't catch application-level errors

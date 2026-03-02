@@ -1,12 +1,13 @@
 # Web/UI Flask Skills Platform
 
 ## Overview
+
 Flask web development patterns and UI architecture for building scalable, maintainable web applications. This domain covers project structure, routing, component design, and CSS organization for production Flask applications.
 
 ## Domain Scope
 
 | Category | Coverage |
-|----------|----------|
+| ---------- | ---------- |
 | **Architecture** | Project structure, blueprints, application factory pattern, configuration management |
 | **Routing** | URL routing, request handling, error handling, middleware patterns |
 | **UI Components** | Reusable Jinja2 templates, component libraries, form patterns, modal/table components |
@@ -25,17 +26,19 @@ Flask web development patterns and UI architecture for building scalable, mainta
 ## Quick Reference
 
 | Task | Skill | Coverage |
-|------|-------|----------|
+| ------ | ------- | ---------- |
 | Set up project structure and routing | `flask-setup-patterns.md` | Blueprints, application factory, middleware |
 | Organize CSS and styling system | `centralized-css-architecture.md` | SCSS, utilities, component classes, no inline styles |
 | Build reusable UI elements | `web-ui-component-library.md` | Headers, forms, modals, tables, Jinja2 patterns |
 
 ## Available Skills
+
 1. [flask-setup-patterns.md](flask-setup-patterns.md)
 2. [centralized-css-architecture.md](centralized-css-architecture.md)
 3. [web-ui-component-library.md](web-ui-component-library.md)
 
 ## Key Principles
+
 - **Separation of Concerns**: Templates, routes, models, and styles in separate files
 - **DRY (Don't Repeat Yourself)**: Reusable components and template inheritance
 - **Maintainability**: Organized project structure supports long-term development

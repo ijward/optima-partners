@@ -1,9 +1,11 @@
 # DataBricks Performance Patterns
 
 ## Purpose
+
 Best practices and design patterns for optimizing DataBricks job performance, infrastructure utilization, and query execution across production ETL and analytics workloads.
 
 ## When to Use
+
 - Designing efficient data pipelines and transformation logic
 - Configuring clusters for specific workload types
 - Implementing caching and memoization strategies
@@ -11,6 +13,7 @@ Best practices and design patterns for optimizing DataBricks job performance, in
 - Establishing performance baselines and SLAs
 
 ## Core Concepts
+
 - **Partitioning Strategy**: Organizing data by query patterns; improves partition pruning efficiency
 - **Bucketing**: Hash-based partitioning for optimized joins; pre-sorts data
 - **Caching**: Persisting intermediate results with appropriate storage levels
@@ -20,6 +23,7 @@ Best practices and design patterns for optimizing DataBricks job performance, in
 ## Reference Examples
 
 ### Efficient Join with Broadcast Hint (PySpark)
+
 ```python
 large_df = spark.read.table("large_table")
 small_df = spark.read.table("lookup_table")
@@ -34,6 +38,7 @@ result = large_df.join(
 ```
 
 ### Partition and Cache Strategy
+
 ```python
 # Read data partitioned by date
 df = spark.read.table("events") \
@@ -51,6 +56,7 @@ df.unpersist()  # Release cache when done
 ```
 
 ### SQL Window Functions (Efficient)
+
 ```sql
 -- Compute aggregations and rankings in single pass
 SELECT 
@@ -65,6 +71,7 @@ WHERE year = 2024;
 ```
 
 ## Common Pitfalls
+
 - **Collect to Driver**: Using `.collect()` on large DataFrames; moves data to driver memory
 - **Unnecessary Shuffles**: Multiple groupBy operations; combine into single operation
 - **Wrong Partitioning**: Partitioning by high-cardinality columns; creates thousands of tiny files
@@ -73,12 +80,14 @@ WHERE year = 2024;
 - **Correlated Subqueries**: Nested queries with correlations; rewrite as joins
 
 ## Dependencies
+
 - **Delta Lake**: For ACID guarantees and partition pruning
 - **Databricks SQL Warehouse**: SQL-based optimization and monitoring
 - **Apache Spark**: Core execution engine and optimization
 - **PySpark/Scala**: For programmatic optimization (UDFs, custom logic)
 
 ## Limitations
+
 - Some optimizations trade memory for speed; cluster size matters
 - Partitioning strategy requires knowledge of query patterns
 - Caching adds complexity; profile to ensure net benefit

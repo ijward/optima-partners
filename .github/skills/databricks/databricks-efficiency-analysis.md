@@ -1,9 +1,11 @@
 # DataBricks Efficiency Analysis
 
 ## Purpose
+
 Patterns for identifying inefficiency sources, cost drivers, and optimization opportunities in DataBricks workloads through profiling, monitoring, and root cause analysis.
 
 ## When to Use
+
 - Investigating why specific queries or jobs run slowly
 - Finding cost optimization opportunities in existing workloads
 - Diagnosing cluster over-provisioning or underutilization
@@ -11,6 +13,7 @@ Patterns for identifying inefficiency sources, cost drivers, and optimization op
 - Profiling jobs before and after optimization attempts
 
 ## Core Concepts
+
 - **Spark UI Analysis**: Viewing task execution graphs, stage metrics, and task timings
 - **Query Plans**: Examining logical and physical execution plans for inefficiencies
 - **Bottleneck Detection**: Identifying stages consuming most CPU, memory, or network resources
@@ -20,6 +23,7 @@ Patterns for identifying inefficiency sources, cost drivers, and optimization op
 ## Reference Examples
 
 ### Examine Query Plan
+
 ```sql
 EXPLAIN EXTENDED
 SELECT customer_id, SUM(amount) as total
@@ -32,6 +36,7 @@ GROUP BY customer_id;
 ```
 
 ### Identify Data Skew (PySpark)
+
 ```python
 from pyspark.sql import functions as F
 
@@ -44,6 +49,7 @@ df.repartition(200, "partition_column").write.mode("overwrite").path
 ```
 
 ### Check Cluster Utilization
+
 ```python
 # Monitor via Spark UI metrics or Databricks SQL
 SELECT 
@@ -55,6 +61,7 @@ WHERE query_timestamp > current_timestamp() - INTERVAL 1 HOUR;
 ```
 
 ## Common Pitfalls
+
 - **Missing Join Order Analysis**: Not examining join order in execution plan; reorder large-to-small
 - **Ignoring Partition Pruning**: Queries reading entire partitions unnecessarily; add partition filters
 - **Broadcasting Large Tables**: Default behavior may cause OOM; use `broadcast()` hint explicitly
@@ -63,12 +70,14 @@ WHERE query_timestamp > current_timestamp() - INTERVAL 1 HOUR;
 - **Task Imbalance**: Skewed data causing few tasks to process majority; implement salting or repartitioning
 
 ## Dependencies
+
 - **Spark UI**: Built-in Databricks diagnostic tool
 - **Delta Lake Statistics**: `ANALYZE TABLE` for optimizer hints
 - **Databricks SQL Warehouse**: For query performance monitoring
 - **DBUtils Secrets**: For accessing monitoring APIs securely
 
 ## Limitations
+
 - Spark UI only shows recent history; use Delta Lake logs for comprehensive auditing
 - Cost analysis requires proper tagging and DBU tracking setup
 - Large-scale analysis of terabyte datasets can be expensive itself
