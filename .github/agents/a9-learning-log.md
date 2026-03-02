@@ -72,6 +72,18 @@ Phases: `Planning` | `Development` | `Testing` | `Security` | `Deployment` | `Ge
 
 ---
 
+### [2026-03-02] Deployment — Reusable Auto-commit Workflow Template Available for Project Integration
+
+**What happened**: Auto-commit workflow template made reusable and available across all Optima Partners projects. Template location: [`.github/workflow-templates/auto-commit-github-changes/`](.github/workflow-templates/auto-commit-github-changes/). The template includes a parameterized `workflow.yml` with configurable options: schedule frequency, target directory, commit message text, and auto-merge label criteria. Documentation with setup instructions provided for other projects. Template is accessible via GitHub workflow templates UI or direct file copy. The sync-agents workflow automatically propagates this template to other repositories.
+
+**Root cause / reason**: Standardized workflow templates reduce setup time and ensure consistent automation practices across all repositories. Parameterization enables projects to customize behavior while maintaining a single source of truth for the workflow logic.
+
+**Recommendation**: When onboarding new projects, offer the auto-commit template as a standard deployment automation option. Document in project onboarding checklists. Monitor sync-agents logs to verify template propagation across target repositories. Consider creating additional parameterized templates for common deployment patterns (e.g., scheduled deployments, environment-specific workflows, release automation).
+
+**Applied to**: A9 Deployment Manager (all projects can leverage this template)
+
+---
+
 ### [2026-03-02] General — Template initialised
 
 **What happened**: A9 template created with core sub-agents: A9 Task Manager, A9 Learning Monitor, A9 Planning Manager, A9 Developer, A9 Developer Assistant, A9 Testing Manager, A9 Web Development Manager, A9 Security Manager, A9 Deployment Manager.

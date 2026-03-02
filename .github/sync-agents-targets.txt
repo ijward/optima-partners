@@ -9,3 +9,4 @@
 #   ijward/another-project
 
 ijward/xml_mapping
+ijward/FootballTransferNews
