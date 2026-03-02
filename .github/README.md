@@ -5,9 +5,11 @@ This directory contains all GitHub configuration, agents, automation workflows, 
 ## 📑 Directory Structure
 
 ### 📂 `agents/`
+
 GitHub Copilot agent definitions that orchestrate the A9 development system.
 
 **Key files:**
+
 - `a9-task-manager.md` — Main entry point; orchestrates all phases
 - `a9-developer.md` — Code writing and modifications
 - `a9-testing-manager.md` — Testing and validation
@@ -16,15 +18,18 @@ GitHub Copilot agent definitions that orchestrate the A9 development system.
 - `a9-learning-log.md` — Project experience log
 
 See [agents/README.md](agents/README.md) for:
+
 - How to use agents
 - Agent sync setup across repositories
 - Adding new agents
 - Keeping agents synchronized
 
 ### 📂 `workflow-templates/`
+
 Reusable GitHub Actions workflow templates for cross-project use.
 
 **Available templates:**
+
 - **`auto-commit-github-changes/`** — Automated configuration commits
   - Monitors directories for changes
   - Creates PRs on a schedule
@@ -32,7 +37,14 @@ Reusable GitHub Actions workflow templates for cross-project use.
   - Fully customizable via repository variables
   - [Full documentation](workflow-templates/auto-commit-github-changes/README.md)
 
+- **`powershell-automation/`** — PowerShell-based automation (Windows runners)
+  - Executes `.ps1` scripts without permission prompts
+  - Configurable execution policies
+  - Trusted script paths for security
+  - [Full documentation](workflow-templates/powershell-automation/README.md)
+
 **To use a template in another project:**
+
 ```bash
 # Copy workflow to your project
 mkdir -p .github/workflows
@@ -46,17 +58,21 @@ git push
 ```
 
 ### 📂 `skills/`
+
 Specialized skill modules extending agent capabilities.
 
 Available skills:
+
 - `web-ui/` — Web development and UI creation
 - `xml/` — XML processing and validation
 - `databricks/` — Databricks integration
 
 ### 📂 `workflows/`
+
 Active GitHub Actions workflows for this repository.
 
 **Key workflows:**
+
 - `sync-agents.yml` — Synchronizes agents to target repositories (automatic on push to main)
 - `push-agents-to-central.yml` — Pushes agent changes from target repos to central (reverse sync)
 
@@ -68,7 +84,7 @@ Active GitHub Actions workflows for this repository.
 
 ## 🚀 Quick Start
 
-### To start a development project:
+### To start a development project
 
 1. Open VS Code with this repository
 2. Press `Ctrl+Alt+I` (Windows/Linux) or `Cmd+Option+I` (Mac)
@@ -79,7 +95,7 @@ Active GitHub Actions workflows for this repository.
 
 For detailed guidance, see [A9_TEMPLATE_GUIDE.md](../A9_TEMPLATE_GUIDE.md)
 
-### To add automation to a project:
+### To add automation to a project
 
 1. Choose a workflow template from `workflow-templates/`
 2. Copy the workflow file to your project's `.github/workflows/`
@@ -87,6 +103,7 @@ For detailed guidance, see [A9_TEMPLATE_GUIDE.md](../A9_TEMPLATE_GUIDE.md)
 4. Automation runs automatically on schedule
 
 For detailed templates and examples, see:
+
 - [Auto-Commit Workflow Documentation](workflow-templates/auto-commit-github-changes/README.md)
 
 ## 🔄 Agent Synchronization
@@ -94,11 +111,13 @@ For detailed templates and examples, see:
 Agents are kept in sync across multiple repositories automatically.
 
 **How it works:**
+
 1. Central repo (ijward/optima-partners) is the source of truth
 2. Changes here are automatically pushed to all target repos
 3. Changes in target repos are pushed back to central, then fanned out to all others
 
 **Setup required (one-time per repo):**
+
 - Personal Access Token in repository secrets (named `SYNC_TOKEN`)
 - Push-back workflow: `.github/workflows/push-agents-to-central.yml`
 - Target repo listed in `sync-agents-targets.txt`
@@ -119,10 +138,54 @@ See [agents/README.md](agents/README.md) for complete setup instructions.
 - **Branch Protection:** Branch protection rules are recommended for the default branch
 - **Code Review:** All agent changes should be reviewed before merging to `main`
 
+### 🔐 PowerShell Permissions & Execution Policy
+
+All PowerShell scripts in `.github/*` are configured to run **without permission prompts**, while maintaining security standards.
+
+#### Quick Reference
+
+| Use Case | Command |
+| --- | --- |
+| **Local Windows dev** | `. .\.github\pwsh-config.ps1` in PowerShell before running scripts |
+| **GitHub Actions (Windows runner)** | Add `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force` to workflow step |
+| **Run a script** | `. .\.\github\pwsh-config.ps1` then `& ".\.\github\scripts\script.ps1"` |
+
+#### Execution Policy
+
+- **Policy**: `RemoteSigned` (no prompts for local scripts)
+- **Scope**: `CurrentUser` (no elevation required)
+- **Applies to**: All scripts in `.github/scripts/`, `.github/workflows/`, `.github/setup/`
+
+#### GitHub Actions Workflow Setup
+
+Add this step at the start of any Windows job using PowerShell:
+
+```yaml
+- name: Configure PowerShell automation
+  shell: pwsh
+  run: |
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    . .\.github\pwsh-config.ps1
+```
+
+#### Configuration File
+
+- **Location**: [`.github/pwsh-config.ps1`](pwsh-config.ps1)
+- **Functions**: `Set-GitHubAutomationPolicy`, `Get-TrustedScriptPaths`, `Test-ScriptSignature`, `Invoke-TrustedScript`
+- **Documentation**: See [agents/a9-deployment-manager.md](agents/a9-deployment-manager.md#security-configuration) → Security Configuration section
+
+#### Trusted Script Paths
+
+Scripts in these directories execute without permission checks:
+
+- `.github/scripts/` — Automation and deployment scripts
+- `.github/workflows/` — GitHub Actions workflow scripts
+- `.github/setup/` — Environment configuration scripts
+
 ## 🐛 Common Issues & Solutions
 
 | Issue | Solution |
-|-------|----------|
+| --- | --- |
 | A9 Task Manager not visible | Ensure `.github/agents/a9-task-manager.md` exists; restart VS Code |
 | Agents not syncing to other repos | Check `SYNC_TOKEN` is set in repository secrets; verify repo listed in `sync-agents-targets.txt` |
 | Workflow not triggering on schedule | Verify scheduled workflows are enabled in repository settings; make a commit to "wake up" the scheduler |
@@ -132,6 +195,7 @@ See [agents/README.md](agents/README.md) for complete setup instructions.
 ## 📞 Support
 
 For issues with:
+
 - **Development workflow** → Tell A9 Task Manager in the chat
 - **Specific workflow failures** → Check GitHub Actions → View logs
 - **Agent changes** → Create a new issue describing the desired behavior
