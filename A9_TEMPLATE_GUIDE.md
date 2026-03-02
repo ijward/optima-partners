@@ -88,7 +88,31 @@ You only ever talk to one agent: **A9 Task Manager**.
 | **Development** | A9 Developer (and assistants) write the code or configuration |
 | **Testing** | A9 Testing Manager runs all tests and confirms everything works |
 | **Security** | A9 Security Manager checks for vulnerabilities before anything goes live |
-| **Deployment** | A9 Deployment Manager commits the work to GitHub and syncs it to all your repos |
+| **Deployment** | A9 Deployment Manager handles two tracks: (1) commits any `.github/*` changes to GitHub, triggering an automatic sync to all your other repos; (2) co-ordinates delivery of the project output — asking whether you want it run locally (creates a Flask app) or hosted on a web server |
+
+---
+
+## Deployment — Local or Hosted?
+
+At the end of every project that produces a web page or visual output, A9 Task Manager will ask you one question:
+
+> *"Should this be run locally (on your own machine) or hosted (on a web server or cloud platform)?"*
+
+### If you choose Local
+
+A9 Deployment Manager will create a small, ready-to-run web server (using **Flask**, a lightweight Python tool) so you can view the output in your browser without any internet hosting. Once it is ready, A9 Task Manager will give you three simple commands to run in the VS Code integrated terminal:
+
+```
+cd <project-folder>
+pip install -r app/requirements.txt
+python app/app.py
+```
+
+Then open your browser and go to `http://127.0.0.1:5000`. That's it.
+
+### If you choose Hosted
+
+A9 Task Manager will ask a follow-up question: *"Which platform would you like to host on?"* (for example, GitHub Pages, Azure, AWS). You do not need to know how to set it up — A9 Deployment Manager will co-ordinate the configuration and tell you any remaining steps.
 
 ---
 
