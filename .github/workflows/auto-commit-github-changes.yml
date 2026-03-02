@@ -120,16 +120,17 @@ jobs:
         id: create-fix-issue
         if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'false'
         uses: actions/github-script@v7
+        env:
+          ERROR_COUNT: ${{ steps.validate.outputs.error_count }}
+          ERROR_LOG: ${{ steps.validate.outputs.error_log }}
+          CONTEXT_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
           script: |
             const errorCount = process.env.ERROR_COUNT;
             const errorLog = process.env.ERROR_LOG || 'See validation log above';
+            const contextUrl = process.env.CONTEXT_URL;
             
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Fix: ${errorCount} validation errors in .github/ files`,
-              body: `## Auto-Commit Validation Failed
+            const bodyText = `## Auto-Commit Validation Failed
 
 **Error Count**: ${errorCount}
 
@@ -164,17 +165,20 @@ python3 -m json.tool your-file.json
 
 **Assigned to**: @a9-developer (please fix and retry)
 **Workflow**: Auto-Commit GitHub Configuration Changes
-**Link**: [Workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-`,
+**Link**: [Workflow run](${contextUrl})
+`;
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Fix: ${errorCount} validation errors in .github/ files`,
+              body: bodyText,
               labels: ['auto-commit', 'validation-failed', 'urgent'],
-              assignees: ['a9-developer'] // Note: Replace with actual username if available
+              assignees: ['a9-developer']
             });
             
             console.log('Fix issue created:', issue.data.number);
             core.setOutput('fix_issue_number', issue.data.number);
-        env:
-          ERROR_COUNT: ${{ steps.validate.outputs.error_count }}
-          ERROR_LOG: ${{ steps.validate.outputs.error_log }}
 
       # ============================================================================
       # IF VALIDATION PASSES: Continue with auto-commit (Deployment Phase)
@@ -220,16 +224,11 @@ python3 -m json.tool your-file.json
         with:
           script: |
             const { BRANCH_NAME } = process.env;
-            const pr = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: BRANCH_NAME,
-              base: 'main',
-              title: '[Auto] Update .github configuration files',
-              body: `## ✅ Automated .github Configuration Update
+            
+            const bodyText = `## ✅ Automated .github Configuration Update
 
-**Validation Status**: ✅ PASSED  
-**Files Modified**: .github/ directory  
+**Validation Status**: ✅ PASSED
+**Files Modified**: .github/ directory
 **Triggered by**: Scheduled auto-commit workflow
 
 ### Testing Gate Results
@@ -246,7 +245,15 @@ This PR will be automatically merged to main. Changes will then be synced to all
 - No errors detected in validation gate
 
 **Merge Method**: Merge commit (preserves history)
-`,
+`;
+            
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: BRANCH_NAME,
+              base: 'main',
+              title: '[Auto] Update .github configuration files',
+              body: bodyText,
               labels: ['auto-merge', 'verified']
             });
             
