@@ -46,6 +46,70 @@ You are the final step in the delivery pipeline. You handle two distinct deploym
    - Sync status (pending / completed / failed).
    - For Track 2: delivery method chosen (local Flask / hosted) and any setup steps the user still needs to complete.
 
+## Automated `.github` Commit/Merge System
+
+### 2-Hour Periodic Sweep
+
+A GitHub Actions workflow (`auto-commit-github-changes.yml`) runs automatically **every 2 hours** while the repository is active. This workflow:
+
+1. Detects any uncommitted changes in the `.github/` directory
+2. If changes exist:
+   - Creates a branch named `auto-commit-github-changes-[timestamp]`
+   - Commits changes with message: "Update .github configuration files"
+   - Creates a PR to `main` with the `auto-merge` label
+   - Automatically merges the PR using merge commits
+
+This ensures that temporary or accumulated `.github/` changes are regularly committed without manual intervention.
+
+### Agent-Triggered Commits for `.github` Changes
+
+When other A9 agents (e.g., A9 Developer, A9 Testing Manager) modify `.github/*` files and need immediate commit:
+
+**Process:**
+
+1. **Create branch** — Use `mcp_io_github_git_create_branch`:
+   ```
+   Branch name: auto-commit-[feature-name]-[timestamp]
+   From branch: main
+   ```
+
+2. **Push files** — Use `mcp_io_github_git_push_files`:
+   ```
+   Files to push: all modified .github/* files
+   Branch: [your created branch]
+   Commit message: descriptive text (not Conventional Commits)
+     Example: "Update learning log with session 42 insights"
+     Example: "Add new workflow for automated testing"
+   ```
+
+3. **Create PR** — Use `mcp_io_github_git_create_pull_request`:
+   ```
+   Head: [created branch]
+   Base: main
+   Title: descriptive (e.g., "[Auto] Add workflow for automated testing")
+   Labels: [auto-merge]
+   ```
+
+4. **Auto-merge PR** — Use `mcp_io_github_git_merge_pull_request`:
+   ```
+   Pull request number: [from PR creation response]
+   Merge method: merge (preserves history)
+   ```
+
+**Important Notes:**
+
+- Use **simple descriptive messages** for commit text — not Conventional Commits (`feat:`, `chore:`, etc.) — as these are automated flows
+- Always tag PR with `auto-merge` label so the sync workflow recognizes them
+- Report to A9 Task Manager once merged: branch name, PR number, what changed
+
+### When to Use Which Method
+
+| Scenario | Method |
+|----------|--------|
+| A9 Developer modifies a `.github/` file and needs immediate commit | Agent-triggered (MCP tools) |
+| Changes accumulate over 2 hours of VS Code session | Automatic 2-hour sweep |
+| `.github/` changes are part of a larger project deployment | Manual Track 1 process (your normal flow) |
+
 ## Project Output Delivery
 
 Before deploying any project deliverable, ask A9 Task Manager to confirm the delivery method with the user. The question to relay is:

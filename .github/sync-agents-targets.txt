@@ -7,3 +7,5 @@
 # Example:
 #   ijward/my-other-repo
 #   ijward/another-project
+
+ijward/xml_mapping

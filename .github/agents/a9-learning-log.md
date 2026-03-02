@@ -60,6 +60,18 @@ Phases: `Planning` | `Development` | `Testing` | `Security` | `Deployment` | `Ge
 
 ---
 
+### [2026-03-02] Deployment — Auto-commit System for `.github\*` Changes
+
+**What happened**: Automated commit/merge system established for `.github\*` changes. GitHub Actions workflow (`.github/workflows/auto-commit-github-changes.yml`) runs every 2 hours to detect uncommitted changes. A9 Deployment Manager can trigger immediate commits after agent tasks using MCP GitHub tools. All changes are committed via PR with auto-merge workflow for safety and audit trail. Files modified: `.github/agents/a9-deployment-manager.md` updated with workflow documentation.
+
+**Root cause / reason**: Manual git operations for agent instruction updates and workflow/configuration changes introduce friction and potential for missed updates. Automated system reduces manual overhead while maintaining full audit trail through PR records.
+
+**Recommendation**: A9 Deployment Manager should use `mcp_io_github_git_push_files` tool to trigger immediate commits after major agent tasks, rather than waiting for the 2-hour workflow cycle. Document any new configuration changes to `.github\*` in commit messages for audit purposes. All changes require PR approval before merge to maintain quality control.
+
+**Applied to**: A9 Deployment Manager (all agents that modify `.github\*` should be aware of this system)
+
+---
+
 ### [2026-03-02] General — Template initialised
 
 **What happened**: A9 template created with core sub-agents: A9 Task Manager, A9 Learning Monitor, A9 Planning Manager, A9 Developer, A9 Developer Assistant, A9 Testing Manager, A9 Web Development Manager, A9 Security Manager, A9 Deployment Manager.
