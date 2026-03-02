@@ -25,6 +25,7 @@ on:
       - main
     paths:
       - '.github/agents/**/*.md'
+      - '.github/skills/**/*.md'
 
 jobs:
   push-to-central:
@@ -61,17 +62,19 @@ jobs:
           git clone --depth 1 "https://x-access-token:${SYNC_TOKEN}@github.com/${CENTRAL_REPO}.git" "$WORK_DIR"
 
           mkdir -p "$WORK_DIR/.github/agents"
+          mkdir -p "$WORK_DIR/.github/skills"
           cp .github/agents/*.md "$WORK_DIR/.github/agents/" 2>/dev/null || echo "No .md agent files to copy."
+          cp -r .github/skills/ "$WORK_DIR/.github/" 2>/dev/null || echo "No skills directory to copy."
 
           cd "$WORK_DIR"
 
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes to push to $CENTRAL_REPO — already up to date."
           else
-            git add .github/agents/
-            git commit -m "chore: sync Copilot agent files from ${{ github.repository }}"
+            git add .github/agents/ .github/skills/
+            git commit -m "chore: sync Copilot agent and skills files from ${{ github.repository }}"
             git push
-            echo "Successfully pushed agent changes to $CENTRAL_REPO."
+            echo "Successfully pushed agent and skills changes to $CENTRAL_REPO."
             echo "The central sync workflow will now fan the update out to all other repositories."
           fi
 
