@@ -6,12 +6,13 @@ on:
       - main
     paths:
       - '.github/agents/**/*.md'
+      - '.github/skills/**/*.md'
   workflow_dispatch:
     inputs:
       dry_run:
         description: 'Dry run (print what would be synced without pushing)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
@@ -70,7 +71,9 @@ jobs:
             git clone --depth 1 "https://x-access-token:${SYNC_TOKEN}@github.com/${target}.git" "$WORK_DIR"
 
             mkdir -p "$WORK_DIR/.github/agents"
+            mkdir -p "$WORK_DIR/.github/skills"
             cp .github/agents/*.md "$WORK_DIR/.github/agents/" 2>/dev/null || echo "No .md agent files to copy."
+            cp -r .github/skills/ "$WORK_DIR/.github/" 2>/dev/null || echo "No skills directory to copy."
 
             cd "$WORK_DIR"
 
@@ -81,10 +84,10 @@ jobs:
                 echo "[DRY RUN] Would commit and push the following changes to $target:"
                 git diff
               else
-                git add .github/agents/
-                git commit -m "chore: sync Copilot agent files from ${{ github.repository }}"
+                git add .github/agents/ .github/skills/
+                git commit -m "chore: sync Copilot agent and skills files from ${{ github.repository }}"
                 git push
-                echo "Successfully synced agents to $target."
+                echo "Successfully synced agents and skills to $target."
               fi
             fi
 
