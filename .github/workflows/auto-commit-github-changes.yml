@@ -6,11 +6,12 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  auto-commit:
+  validate-and-commit:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout repository
@@ -28,8 +29,169 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit and create PR
+      # ============================================================================
+      # TESTING GATE: A9 TESTING MANAGER - Validation Phase
+      # ============================================================================
+      - name: "🧪 A9 TESTING MANAGER: Validate .github/ files (Markdown, YAML, JSON)"
+        id: validate
         if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          echo "## Starting A9 Testing Manager Validation..." >> $GITHUB_STEP_SUMMARY
+          
+          # Install validation tools
+          npm install -g markdownlint-cli2 yamllint jsonlint-cli &>/dev/null || true
+          apt-get update &>/dev/null && apt-get install -y yamllint &>/dev/null || true
+          
+          # Get list of changed .github files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep "\.github/" || git status --short | grep "\.github/" | awk '{print $NF}')
+          
+          ERROR_COUNT=0
+          ERROR_LOG=""
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No .github/ files detected as changed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Files to validate:" >> $GITHUB_STEP_SUMMARY
+            echo "$CHANGED_FILES" | sed 's/^/  - /' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Validate Markdown files
+            echo "### Markdown Validation" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r file; do
+              if [[ $file == *.md ]]; then
+                if markdownlint-cli2 "$file" 2>/dev/null; then
+                  echo "✅ $file: PASS" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "❌ $file: FAIL (markdown errors found)" >> $GITHUB_STEP_SUMMARY
+                  ((ERROR_COUNT++))
+                  ERROR_LOG="$ERROR_LOG\n- $file (markdown)"
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+            
+            # Validate YAML files
+            echo "### YAML Validation" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r file; do
+              if [[ $file == *.yml ]] || [[ $file == *.yaml ]]; then
+                if yamllint -d relaxed "$file" 2>/dev/null | grep -q "error"; then
+                  echo "❌ $file: FAIL (YAML syntax error)" >> $GITHUB_STEP_SUMMARY
+                  ((ERROR_COUNT++))
+                  ERROR_LOG="$ERROR_LOG\n- $file (YAML)"
+                else
+                  echo "✅ $file: PASS" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+            
+            # Validate JSON files
+            echo "### JSON Validation" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r file; do
+              if [[ $file == *.json ]]; then
+                if python3 -m json.tool "$file" > /dev/null 2>&1; then
+                  echo "✅ $file: PASS" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "❌ $file: FAIL (JSON syntax error)" >> $GITHUB_STEP_SUMMARY
+                  ((ERROR_COUNT++))
+                  ERROR_LOG="$ERROR_LOG\n- $file (JSON)"
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Total errors found: $ERROR_COUNT**" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $ERROR_COUNT -gt 0 ]; then
+            echo "❌ **VALIDATION FAILED** — Merge blocked" >> $GITHUB_STEP_SUMMARY
+            echo "validation_passed=false" >> $GITHUB_OUTPUT
+            echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+            echo "error_log=$ERROR_LOG" >> $GITHUB_OUTPUT
+          else
+            echo "✅ **VALIDATION PASSED** — All files clean" >> $GITHUB_STEP_SUMMARY
+            echo "validation_passed=true" >> $GITHUB_OUTPUT
+            echo "error_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================================================
+      # IF VALIDATION FAILS: Create fix task for A9 Developer
+      # ============================================================================
+      - name: "🚫 Create fix task (if validation fails)"
+        id: create-fix-issue
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorCount = process.env.ERROR_COUNT;
+            const errorLog = process.env.ERROR_LOG || 'See validation log above';
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Fix: ${errorCount} validation errors in .github/ files`,
+              body: `## Auto-Commit Validation Failed
+
+**Error Count**: ${errorCount}
+
+**Files with errors**:
+${errorLog}
+
+### Action Required
+1. Review the validation errors in the auto-commit workflow run
+2. Fix each error in the .github/ files
+3. Verify all errors are resolved using local validation tools
+4. Commit and push changes
+5. The auto-commit workflow will re-run and validate
+
+### Validation Rules
+- Markdown files must pass markdownlint checks
+- YAML files must pass YAML syntax validation
+- JSON files must be valid JSON
+- No inline HTML allowed in Markdown
+- Proper spacing around headings and lists required
+
+### Tools to Check Locally
+\`\`\`bash
+# Install validation tools
+npm install -g markdownlint-cli2
+apt-get install yamllint
+
+# Check files
+markdownlint-cli2 .github/README.md
+yamllint .github/workflows/*.yml
+python3 -m json.tool your-file.json
+\`\`\`
+
+**Assigned to**: @a9-developer (please fix and retry)
+**Workflow**: Auto-Commit GitHub Configuration Changes
+**Link**: [Workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+`,
+              labels: ['auto-commit', 'validation-failed', 'urgent'],
+              assignees: ['a9-developer'] // Note: Replace with actual username if available
+            });
+            
+            console.log('Fix issue created:', issue.data.number);
+            core.setOutput('fix_issue_number', issue.data.number);
+        env:
+          ERROR_COUNT: ${{ steps.validate.outputs.error_count }}
+          ERROR_LOG: ${{ steps.validate.outputs.error_log }}
+
+      # ============================================================================
+      # IF VALIDATION PASSES: Continue with auto-commit (Deployment Phase)
+      # ============================================================================
+      - name: "✅ A9 TESTING MANAGER: Sign-off for deployment"
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'true'
+        run: |
+          echo "## ✅ Validation Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: All checks passed" >> $GITHUB_STEP_SUMMARY
+          echo "**Next**: A9 Deployment Manager will proceed with merge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Proceeding to deployment phase..." >> $GITHUB_STEP_SUMMARY
+
+      - name: "📋 A9 DEPLOYMENT MANAGER: Commit and create PR"
+        id: deploy-commit
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'true'
         run: |
           # Set git config
           git config user.name "github-actions[bot]"
@@ -44,16 +206,16 @@ jobs:
           
           # Stage and commit .github changes
           git add .github/
-          git commit -m "Update .github configuration files"
+          git commit -m "Update .github configuration files (validation: PASS)"
           
           # Push branch
           git push origin $BRANCH_NAME
           
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-      - name: Create Pull Request
+      - name: "📝 Create Pull Request with validation report"
         id: create-pr
-        if: steps.check-changes.outputs.has_changes == 'true'
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -64,15 +226,35 @@ jobs:
               head: BRANCH_NAME,
               base: 'main',
               title: '[Auto] Update .github configuration files',
-              body: 'Automated commit of .github directory changes.\n\nThis PR was created by the auto-commit workflow.',
-              labels: ['auto-merge']
+              body: `## ✅ Automated .github Configuration Update
+
+**Validation Status**: ✅ PASSED  
+**Files Modified**: .github/ directory  
+**Triggered by**: Scheduled auto-commit workflow
+
+### Testing Gate Results
+- A9 Testing Manager: ✅ Validation passed (0 errors)
+- A9 Deployment Manager: Ready for merge
+- Auto-merge: Enabled
+
+This PR will be automatically merged to main. Changes will then be synced to all target repositories via the sync-agents.yml workflow.
+
+### Quality Assurance
+- All Markdown files pass linting
+- All YAML files are syntactically valid
+- All JSON files are well-formed
+- No errors detected in validation gate
+
+**Merge Method**: Merge commit (preserves history)
+`,
+              labels: ['auto-merge', 'verified']
             });
             
             console.log('PR created:', pr.data.number);
             core.setOutput('pr_number', pr.data.number);
 
-      - name: Enable auto-merge
-        if: steps.check-changes.outputs.has_changes == 'true'
+      - name: "🔀 Enable auto-merge (Deployment phase)"
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.validate.outputs.validation_passed == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -86,6 +268,7 @@ jobs:
                 merge_method: 'merge'
               });
               console.log('Auto-merge enabled for PR', prNumber);
+              core.notice(`✅ Auto-merge enabled for PR #${prNumber}`);
             } catch (error) {
               console.log('Auto-merge not available or failed:', error.message);
               // Fallback: merge the PR immediately
@@ -96,4 +279,18 @@ jobs:
                 merge_method: 'merge'
               });
               console.log('PR merged immediately');
+              core.notice(`✅ PR #${prNumber} merged immediately`);
             }
+
+      - name: "🎉 Workflow complete"
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          echo "## 🎉 Auto-Commit Workflow Complete" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.validate.outputs.validation_passed }}" = "true" ]; then
+            echo "✅ **Result**: Files validated, PR created and merged" >> $GITHUB_STEP_SUMMARY
+            echo "📤 **Next**: Changes will sync to target repositories via sync-agents.yml" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Result**: Validation failed, fix task created" >> $GITHUB_STEP_SUMMARY
+            echo "👨‍💻 **Assigned to**: A9 Developer (see issue #${{ steps.create-fix-issue.outputs.fix_issue_number }})" >> $GITHUB_STEP_SUMMARY
+          fi

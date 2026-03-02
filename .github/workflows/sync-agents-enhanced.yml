@@ -1,0 +1,299 @@
+name: Sync Agents to Target Repositories
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/agents/**/*.md'
+      - '.github/skills/**/*.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (print what would be synced without pushing)'
+        required: false
+        default: false
+        type: boolean
+      verbose:
+        description: 'Verbose output (show all file paths and operations)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-sync-config:
+    name: Validate sync configuration
+    runs-on: ubuntu-latest
+    outputs:
+      validation_passed: ${{ steps.validate.outputs.passed }}
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Validate sync configuration
+        id: validate
+        run: |
+          set -e
+          VALIDATION_PASSED=true
+          VALIDATION_LOG=""
+          
+          echo "🔍 Validating sync configuration..."
+          echo ""
+          
+          # ═══════════════════════════════════════════════════════════════════
+          # 1. CHECK: sync-agents-targets.txt exists and has entries
+          # ═══════════════════════════════════════════════════════════════════
+          if [ ! -f .github/sync-agents-targets.txt ]; then
+            echo "❌ ERROR: .github/sync-agents-targets.txt not found"
+            VALIDATION_PASSED=false
+            VALIDATION_LOG="$VALIDATION_LOG\n- Missing .github/sync-agents-targets.txt"
+          else
+            TARGETS=$(grep -v '^\s*#' .github/sync-agents-targets.txt | grep -v '^\s*$' || true)
+            if [ -z "$TARGETS" ]; then
+              echo "⚠️  WARNING: No target repositories configured"
+            else
+              echo "✅ Target repositories found:"
+              echo "$TARGETS" | sed 's/^/   - /'
+            fi
+          fi
+          
+          # ═══════════════════════════════════════════════════════════════════
+          # 2. CHECK: .github/agents directory exists
+          # ═══════════════════════════════════════════════════════════════════
+          if [ ! -d .github/agents ]; then
+            echo "❌ ERROR: .github/agents directory not found"
+            VALIDATION_PASSED=false
+            VALIDATION_LOG="$VALIDATION_LOG\n- Missing .github/agents directory"
+          else
+            MD_COUNT=$(find .github/agents -maxdepth 1 -name "*.md" -type f | wc -l)
+            echo "✅ .github/agents directory found with $MD_COUNT .md files"
+            
+            # Check for non-md files (warning only, not a blocker)
+            NON_MD_FILES=$(find .github/agents -maxdepth 1 -type f ! -name "*.md" ! -name "README.md" | wc -l)
+            if [ $NON_MD_FILES -gt 0 ]; then
+              echo "⚠️  WARNING: Found $NON_MD_FILES non-.md files in agents directory:"
+              find .github/agents -maxdepth 1 -type f ! -name "*.md" ! -name "README.md" | sed 's/^/     - /'
+              echo "     These files will NOT be synced (as intended)"
+            fi
+          fi
+          
+          # ═══════════════════════════════════════════════════════════════════
+          # 3. CHECK: .github/skills directory exists
+          # ═══════════════════════════════════════════════════════════════════
+          if [ ! -d .github/skills ]; then
+            echo "❌ ERROR: .github/skills directory not found"
+            VALIDATION_PASSED=false
+            VALIDATION_LOG="$VALIDATION_LOG\n- Missing .github/skills directory"
+          else
+            SKILL_COUNT=$(find .github/skills -type f | wc -l)
+            echo "✅ .github/skills directory found with $SKILL_COUNT files"
+          fi
+          
+          # ═══════════════════════════════════════════════════════════════════
+          # 4. CHECK: No forbidden files will be synced
+          # ═══════════════════════════════════════════════════════════════════
+          FORBIDDEN_FILES=(
+            ".github/pwsh-config.ps1"
+            ".github/workflows/sync-agents.yml"
+            ".github/workflows/auto-commit-github-changes.yml"
+            ".github/agents/push-agents-to-central-template.yml"
+          )
+          
+          echo ""
+          echo "🚫 Checking for files that MUST NOT be synced:"
+          for file in "${FORBIDDEN_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "   ✅ File exists (at expected location): $file"
+            fi
+          done
+          
+          # ═══════════════════════════════════════════════════════════════════
+          # 5. SUMMARY
+          # ═══════════════════════════════════════════════════════════════════
+          echo ""
+          if [ "$VALIDATION_PASSED" = "true" ]; then
+            echo "✅ ═══════════════════════════════════════════"
+            echo "   Validation PASSED - Ready to sync"
+            echo "═══════════════════════════════════════════"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ ═══════════════════════════════════════════"
+            echo "   Validation FAILED"
+            echo "═══════════════════════════════════════════"
+            echo "Validation Log:$VALIDATION_LOG"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  sync:
+    name: Sync agent files
+    needs: validate-sync-config
+    # Do not run when the commit was made by the sync bot itself (prevents loops)
+    if: "!contains(github.event.head_commit.message || '', 'chore: sync Copilot agent files')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Read target repositories
+        id: targets
+        run: |
+          if [ ! -f .github/sync-agents-targets.txt ]; then
+            echo "No target repositories configured. Create .github/sync-agents-targets.txt with one 'owner/repo' per line."
+            exit 1
+          fi
+          # Strip blank lines and comments
+          targets=$(grep -v '^\s*#' .github/sync-agents-targets.txt | grep -v '^\s*$' || true)
+          if [ -z "$targets" ]; then
+            echo "No target repositories listed in .github/sync-agents-targets.txt. Nothing to sync."
+            exit 0
+          fi
+          echo "Targets found:"
+          echo "$targets"
+          echo "targets<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$targets" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Sync agents to each target repository
+        if: steps.targets.outputs.targets != ''
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          VERBOSE: ${{ github.event.inputs.verbose || 'false' }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "ERROR: Secret SYNC_TOKEN is not set. Add a GitHub Personal Access Token with 'repo' scope as a secret named SYNC_TOKEN."
+            exit 1
+          fi
+
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # ═══════════════════════════════════════════════════════════════════
+          # PRE-SYNC VALIDATION: Verify what will be copied
+          # ═══════════════════════════════════════════════════════════════════
+          echo "🔍 PRE-SYNC VALIDATION"
+          echo "═══════════════════════════════════════════════════════════════"
+          
+          echo ""
+          echo "📦 SOURCE FILES TO BE SYNCED:"
+          echo ""
+          echo "1. Agent files (.github/agents/*.md):"
+          find .github/agents -maxdepth 1 -name "*.md" -type f | sed 's/^/   - /'
+          AGENT_COUNT=$(find .github/agents -maxdepth 1 -name "*.md" -type f | wc -l)
+          echo "   Total: $AGENT_COUNT files"
+          
+          echo ""
+          echo "2. Skills directory (.github/skills/**):"
+          if [ -d .github/skills ]; then
+            find .github/skills -type f | sed 's/^/   - /'
+            SKILL_COUNT=$(find .github/skills -type f | wc -l)
+            echo "   Total: $SKILL_COUNT files"
+          else
+            echo "   ⚠️  .github/skills directory not found"
+          fi
+          
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+
+          while IFS= read -r target; do
+            [ -z "$target" ] && continue
+
+            echo "🔄 SYNCING TO: $target"
+            echo "──────────────────────────────────────"
+
+            WORK_DIR=$(mktemp -d)
+            echo "[DEBUG] Temporary working directory: $WORK_DIR"
+            
+            # Clone target repository
+            git clone --depth 1 "https://x-access-token:${SYNC_TOKEN}@github.com/${target}.git" "$WORK_DIR" || {
+              echo "❌ ERROR: Failed to clone $target"
+              rm -rf "$WORK_DIR"
+              continue
+            }
+
+            # ═════════════════════════════════════════════════════════════════
+            # COPY PHASE: Copy ONLY the intended files to target
+            # ═════════════════════════════════════════════════════════════════
+            echo "[INFO] Creating target directories..."
+            mkdir -p "$WORK_DIR/.github/agents"
+            mkdir -p "$WORK_DIR/.github/skills"
+            
+            echo "[INFO] Copying agent files..."
+            cp .github/agents/*.md "$WORK_DIR/.github/agents/" 2>/dev/null || echo "[WARN] No .md agent files to copy."
+            
+            echo "[INFO] Copying skills directory..."
+            cp -r .github/skills/ "$WORK_DIR/.github/" 2>/dev/null || echo "[WARN] No skills directory to copy."
+            
+            # ═════════════════════════════════════════════════════════════════
+            # VALIDATION PHASE: Verify target structure is correct
+            # ═════════════════════════════════════════════════════════════════
+            echo "[INFO] Validating copied structure..."
+            
+            # Check that files are in the right place
+            if [ ! -d "$WORK_DIR/.github/agents" ]; then
+              echo "❌ ERROR: Failed to create .github/agents in target"
+              rm -rf "$WORK_DIR"
+              continue
+            fi
+            
+            if [ ! -d "$WORK_DIR/.github/skills" ]; then
+              echo "❌ ERROR: Failed to create .github/skills in target"
+              rm -rf "$WORK_DIR"
+              continue
+            fi
+            
+            # Check that NO optima-partners directory was created
+            if [ -d "$WORK_DIR/optima-partners" ]; then
+              echo "❌ CRITICAL ERROR: Parent directory 'optima-partners' found in target!"
+              echo "   This indicates incorrect directory structure in sync"
+              rm -rf "$WORK_DIR"
+              continue
+            fi
+            
+            # Show what was copied
+            if [ "$VERBOSE" = "true" ]; then
+              echo "[INFO] Files in target .github/agents/:"
+              ls -la "$WORK_DIR/.github/agents/" | tail -n +2 | sed 's/^/   - /'
+              echo "[INFO] Files in target .github/skills/:"
+              find "$WORK_DIR/.github/skills/" -type f | sed 's/^/   - /'
+            fi
+
+            cd "$WORK_DIR"
+
+            # ═════════════════════════════════════════════════════════════════
+            # COMMIT PHASE: Stage and commit changes
+            # ═════════════════════════════════════════════════════════════════
+            if git diff --quiet && git diff --cached --quiet; then
+              echo "✅ No changes for $target — already up to date."
+            else
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                echo "[DRY RUN] Changes that would be synced:"
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                git diff HEAD
+                echo ""
+                echo "Staged files that would be committed:"
+                git add .github/agents/ .github/skills/
+                git diff --cached
+                echo ""
+                echo "[DRY RUN] Would push to: $target"
+              else
+                git add .github/agents/ .github/skills/
+                git commit -m "chore: sync Copilot agent and skills files from ${{ github.repository }}"
+                git push
+                echo "✅ Successfully synced to $target"
+              fi
+            fi
+
+            cd - > /dev/null
+            rm -rf "$WORK_DIR"
+            echo ""
+          done <<< "${{ steps.targets.outputs.targets }}"
+
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "🎉 Sync operation complete"

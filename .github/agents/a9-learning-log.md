@@ -84,6 +84,18 @@ Phases: `Planning` | `Development` | `Testing` | `Security` | `Deployment` | `Ge
 
 ---
 
+### [2026-03-02] Security — PowerShell Execution Policy Configured for .github/* Automation
+
+**What happened**: PowerShell execution policy configured for `.github/*` automation scripts to enable seamless execution in both GitHub Actions and local Windows development. Created configuration file `.github/pwsh-config.ps1` with helper functions. Execution Policy set to `RemoteSigned` (CurrentUser scope) for trusted paths: `.github/scripts/`, `.github/workflows/`, `.github/setup/`. Scripts execute without permission prompts or elevation requirements. Related files created: `.github/scripts/example.ps1`, `.github/workflow-templates/powershell-automation/` directory. Updated documentation in `.github/agents/a9-deployment-manager.md` and `.github/README.md`.
+
+**Root cause / reason**: PowerShell scripts require explicit execution policy configuration to run without permission dialogs. `RemoteSigned` policy balances security (local scripts trusted, downloaded scripts require signatures) with automation convenience across local dev and GitHub Actions environments.
+
+**Recommendation**: Developers using PowerShell automation should reference `.github/pwsh-config.ps1` for available helper functions. New PowerShell scripts placed in `.github/scripts/` and workflows are automatically trusted under the configuration. Monitor for scripts requiring digital signatures (downloaded from internet) and apply signing when necessary. Document any new helper functions added to `pwsh-config.ps1` for team awareness.
+
+**Applied to**: A9 Deployment Manager, all agents utilizing PowerShell automation in workflows
+
+---
+
 ### [2026-03-02] General — Template initialised
 
 **What happened**: A9 template created with core sub-agents: A9 Task Manager, A9 Learning Monitor, A9 Planning Manager, A9 Developer, A9 Developer Assistant, A9 Testing Manager, A9 Web Development Manager, A9 Security Manager, A9 Deployment Manager.

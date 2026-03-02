@@ -1,0 +1,51 @@
+name: PowerShell Automation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  automation:
+    name: Run PowerShell Automation
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure PowerShell execution
+        shell: pwsh
+        run: |
+          # Set execution policy for workflow duration
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          
+          # Load automation configuration
+          . .\.github\pwsh-config.ps1
+          
+          Write-Host "✓ PowerShell configured for .github automation" -ForegroundColor Green
+
+      - name: Run example automation script
+        shell: pwsh
+        run: |
+          # Source configuration
+          . .\.github\pwsh-config.ps1
+          
+          # Run example script
+          & ".\.github\scripts\example.ps1" -Action info
+
+      - name: Run custom automation
+        shell: pwsh
+        run: |
+          # Source configuration
+          . .\.github\pwsh-config.ps1
+          
+          # Replace with your automation script
+          # & ".\.github\scripts\my-deployment.ps1" -Environment "staging"
+          
+          Write-Host "✓ Automation step would run here" -ForegroundColor Green
