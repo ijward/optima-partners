@@ -199,6 +199,53 @@ These rules are built into the agents and cannot be overridden by accident:
 
 ---
 
+## Available Automation Workflows
+
+The A9 system includes reusable automation workflows that can be deployed to any project. These workflows handle repetitive tasks automatically without human intervention.
+
+### Auto-Commit Workflow
+
+This workflow automatically detects changes in specified directories, creates commits, pull requests, and optionally auto-merges them.
+
+**When to use it:**
+- Keep configuration files (`.github/`) synchronized across projects
+- Automate infrastructure-as-code updates
+- Maintain consistent GitHub Actions and workflows
+- Reduce manual commit overhead
+
+**Key features:**
+- Runs on a configurable schedule (default: every 2 hours)
+- Monitors any specified directory (default: `.github`)
+- Creates timestamped branches for traceability
+- Auto-merges PRs to streamline the process
+- Can be customized per project with variables
+
+**Adding to your projects:**
+
+1. Copy the workflow file to your project:
+   ```bash
+   mkdir -p .github/workflows
+   curl -o .github/workflows/auto-commit.yml \
+     https://raw.githubusercontent.com/ijward/optima-partners/main/.github/workflow-templates/auto-commit-github-changes/workflow.yml
+   ```
+
+2. Commit and push:
+   ```bash
+   git add .github/workflows/auto-commit.yml
+   git commit -m "chore: add auto-commit workflow"
+   git push
+   ```
+
+3. Optionally configure variables in **Settings → Secrets and variables → Actions → Variables**:
+   - `SCHEDULE_FREQUENCY` — Adjust how often it runs (e.g., `0 */4 * * *` for every 4 hours)
+   - `DIRECTORY_TO_MONITOR` — Change monitored directory (default: `.github`)
+   - `COMMIT_MESSAGE_PREFIX` — Customize commit message (default: `Update`)
+
+**For detailed instructions, examples, and troubleshooting, see:**
+- [Auto-Commit Workflow Documentation](../workflow-templates/auto-commit-github-changes/README.md)
+
+---
+
 ## Token Credits
 
 The A9 system is designed to be as efficient as possible with your AI credits. It achieves this by:

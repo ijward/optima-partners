@@ -4,6 +4,55 @@ This directory stores GitHub Copilot coding agent instruction files.
 
 Each agent is defined as a Markdown (`.md`) file. Place your locally created agent files here to store and share them via GitHub.
 
+## Available Agents
+
+Located in this directory (`.github/agents/`):
+- `a9-task-manager.md` — Orchestrates all project workflow phases
+- `a9-developer.md` — Writes and modifies code
+- `a9-developer-assistant.md` — Supports development tasks
+- `a9-planning-manager.md` — Creates detailed project plans
+- `a9-testing-manager.md` — Runs tests and validates code
+- `a9-security-manager.md` — Performs security reviews
+- `a9-deployment-manager.md` — Handles repository commits and deployment
+- `a9-learning-log.md` — Project learning log (auto-maintained)
+- `a9-learning-monitor.md` — Updates learning log after projects
+- `a9-web-development-manager.md` — Creates web UIs and frontends
+
+## Available Workflow Templates
+
+Located in `.github/workflow-templates/`:
+- **`auto-commit-github-changes/`** — Reusable workflow for automated configuration commits
+  - Monitors directories for changes
+  - Creates PRs on a configurable schedule (default: every 2 hours)
+  - Auto-merges if configured
+  - See [`.github/workflow-templates/auto-commit-github-changes/README.md`](../workflow-templates/auto-commit-github-changes/README.md) for integration guide
+
+**Using Workflow Templates in Other Projects:**
+
+To add the auto-commit workflow to any Optima Partners project:
+
+```bash
+# Step 1: Copy workflow to target project
+cp /path/to/template/.github/workflow-templates/auto-commit-github-changes/workflow.yml \
+   /path/to/target/.github/workflows/auto-commit.yml
+
+# Step 2: Commit the file
+cd /path/to/target
+git add .github/workflows/auto-commit.yml
+git commit -m "chore: add auto-commit workflow"
+git push
+
+# Step 3: Configure variables (optional)
+# Go to Settings → Secrets and variables → Actions → Variables
+# Set: SCHEDULE_FREQUENCY, DIRECTORY_TO_MONITOR, etc.
+
+# Step 4: Enable auto-merge (optional)
+# Go to Settings → General → Pull Requests
+# Check "Allow auto-merge" and select merge method
+```
+
+For detailed instructions, see the [Auto-Commit Workflow README](../workflow-templates/auto-commit-github-changes/README.md).
+
 ## Usage
 
 1. Copy your agent `.md` files into this directory.

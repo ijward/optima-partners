@@ -158,17 +158,45 @@ The template exposes the following parameters:
    - Reference the template location in their agent documentation
    - Link to `.github/workflow-templates/auto-commit-github-changes/README.md` for full details
 
-### Documentation
+### Validation & Testing After Deploy
 
-For complete usage guide, examples, troubleshooting, and parameter explanations, see:
-- [`.github/workflow-templates/auto-commit-github-changes/README.md`](.github/workflow-templates/auto-commit-github-changes/README.md)
+After deploying the reusable template to a target repository, validate:
 
-This includes:
-- Basic setup examples
-- Advanced configuration examples
-- Cron expression examples
-- Troubleshooting guide
-- Permission requirements
+1. **Workflow file is in correct location**: `.github/workflows/auto-commit.yml`
+2. **Variables are configured**: Check **Settings → Secrets and variables → Actions → Variables**
+3. **Auto-merge is enabled**: Go to **Settings → General → Pull Requests** and verify "Allow auto-merge" is checked
+4. **Manual trigger works**: 
+   ```bash
+   gh workflow run auto-commit.yml
+   ```
+   Watch the **Actions** tab for successful completion.
+5. **Recent run is visible**: The workflow should appear in the **Actions** tab with status ✅ **Success** or ⏭️ **Skipped** (if no changes detected)
+
+### Troubleshooting Template Deployment Issues
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| Workflow file not found in target repo | File wasn't copied correctly | Run the copy command again, verify path exists: `ls -la <target-repo>/.github/workflows/auto-commit.yml` |
+| Workflow not appearing in Actions tab | Workflow file syntax error or not in `.github/workflows/` | Verify file is named `.yml` and located at `.github/workflows/auto-commit.yml`. Check GitHub Actions tab for error messages. |
+| "Cannot find variable SCHEDULE_FREQUENCY" | Variables weren't set in target project settings | Go to **Settings → Secrets and variables → Actions → Variables** and add the required variables. Workflow has defaults, but custom values should be set if needed. |
+| Workflow runs but never triggers on schedule | Scheduled workflows disabled on inactive repos | Make a push to activate: `git commit --allow-empty -m "chore: activate workflows"` then wait for scheduled time. |
+| PR created but not auto-merging | Auto-merge not enabled in target repo settings | Go to **Settings → General → Pull Requests**, check "Allow auto-merge", select merge method (e.g., "Create a merge commit"). |
+| Branch creation fails with "already exists" | Stale branch from previous run | Clean up: `git push origin --delete auto-commit-<directory>-<timestamp>` |
+| Permissions denied error | Workflow doesn't have write access | Verify the workflow includes `permissions: contents: write` and `pull-requests: write` at the job level. Repository may need higher auth token. |
+
+### Documentation & Resources
+
+For complete usage guide, examples, troubleshooting, parameter explanations, and advanced edge cases, see:
+- **[`.github/workflow-templates/auto-commit-github-changes/README.md`](../workflow-templates/auto-commit-github-changes/README.md)**
+
+This comprehensive guide includes:
+- Step-by-step integration instructions for other projects
+- Configuration examples (2-hour sweep, 6-hour sweep, custom directories)
+- Permissions table and variable precedence
+- Extended troubleshooting guide
+- Branch and PR naming conventions
+- Verification checklist
+- Advanced usage for large directories and rate limiting
 
 ## Project Output Delivery
 
