@@ -33,6 +33,21 @@ Phases: `Planning` | `Development` | `Testing` | `Security` | `Deployment` | `Ge
 
 ## Log Entries
 
+### [2026-03-02] Development — Skills Library Initialized (XML, DataBricks, Web/UI Flask)
+
+**What happened**: A9 successfully created and deployed a core skills library containing 13 markdown files across 3 domains (XML, DataBricks, Web/UI Flask). Each skill file includes Purpose, When to Use, Core Concepts, Reference Examples, Common Pitfalls, Dependencies, and Limitations sections. Files were initially created, remediated for word-count compliance (2 files reduced from 700+ words to <500), validated, committed to main branch, and the sync workflow was updated to include `.github/skills/**` in the sync paths.
+
+**Root cause / reason**: Skills library needed to support planned projects (XML validation, DataBricks efficiency, web mapping visualization). Template required structured, reusable knowledge assets for sub-agents to reference.
+
+**Recommendation**: After first sub-agent usage of skills in a real project, capture feedback on:
+1. Was the reference-card format ({Purpose, When to Use, Core Concepts, Reference Examples, Common Pitfalls, Dependencies, Limitations}) helpful?
+2. Did sub-agents effectively find and reference the skills?
+3. Should additional domains be added (e.g., Testing Patterns, Security Hardening, GitHub Workflows)?
+
+**Applied to**: All sub-agents (especially A9 Developer, A9 Web Development Manager)
+
+---
+
 ### [2026-03-02] General — Template initialised
 
 **What happened**: A9 template created with core sub-agents: A9 Task Manager, A9 Learning Monitor, A9 Planning Manager, A9 Developer, A9 Developer Assistant, A9 Testing Manager, A9 Web Development Manager, A9 Security Manager, A9 Deployment Manager.
