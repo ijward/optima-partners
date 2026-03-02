@@ -110,6 +110,66 @@ When other A9 agents (e.g., A9 Developer, A9 Testing Manager) modify `.github/*`
 | Changes accumulate over 2 hours of VS Code session | Automatic 2-hour sweep |
 | `.github/` changes are part of a larger project deployment | Manual Track 1 process (your normal flow) |
 
+## Reusable Workflow Template
+
+The `auto-commit-github-changes` workflow has been extracted as a reusable template for other projects in the Optima Partners portfolio.
+
+### Template Location
+
+```
+.github/workflow-templates/auto-commit-github-changes/
+├── action.yml          # GitHub Action metadata with parameters
+├── workflow.yml        # Parameterized workflow template
+└── README.md           # Complete documentation and usage guide
+```
+
+### Quick Reference
+
+The template exposes the following parameters:
+
+| Parameter | Purpose | Default |
+|-----------|---------|---------|
+| `SCHEDULE_FREQUENCY` | Cron schedule for workflow runs | `0 */2 * * *` |
+| `DIRECTORY_TO_MONITOR` | Directory path to monitor | `.github` |
+| `COMMIT_MESSAGE_PREFIX` | Prefix for commit messages | `Update` |
+| `AUTO_MERGE_LABEL` | Label for auto-merge detection | `auto-merge` |
+| `BASE_BRANCH` | Base branch for PRs | `main` |
+
+### How to Share to Other Projects
+
+1. **Copy the template files**:
+   ```bash
+   mkdir -p <target-repo>/.github/workflow-templates/auto-commit-github-changes
+   cp -r .github/workflow-templates/auto-commit-github-changes/* \
+         <target-repo>/.github/workflow-templates/auto-commit-github-changes/
+   ```
+
+2. **In the target project, copy the workflow**:
+   ```bash
+   cp .github/workflow-templates/auto-commit-github-changes/workflow.yml \
+      .github/workflows/auto-commit.yml
+   ```
+
+3. **Configure via GitHub Variables** (optional):
+   - Go to Settings → Secrets and variables → Actions → Variables
+   - Add custom values for `SCHEDULE_FREQUENCY`, `DIRECTORY_TO_MONITOR`, etc.
+
+4. **Enable in target project's A9 Deployment Manager** (if they have one):
+   - Reference the template location in their agent documentation
+   - Link to `.github/workflow-templates/auto-commit-github-changes/README.md` for full details
+
+### Documentation
+
+For complete usage guide, examples, troubleshooting, and parameter explanations, see:
+- [`.github/workflow-templates/auto-commit-github-changes/README.md`](.github/workflow-templates/auto-commit-github-changes/README.md)
+
+This includes:
+- Basic setup examples
+- Advanced configuration examples
+- Cron expression examples
+- Troubleshooting guide
+- Permission requirements
+
 ## Project Output Delivery
 
 Before deploying any project deliverable, ask A9 Task Manager to confirm the delivery method with the user. The question to relay is:

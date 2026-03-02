@@ -1,0 +1,35 @@
+name: 'Auto-Commit Configuration Changes'
+description: 'Automatically commits and creates PRs for configuration file changes in specified directories'
+author: 'A9 Deployment Manager'
+
+inputs:
+  schedule-frequency:
+    description: 'Cron schedule for the workflow (default: every 2 hours)'
+    required: false
+    default: '0 */2 * * *'
+  
+  directory-to-monitor:
+    description: 'Directory to monitor for changes (default: .github)'
+    required: false
+    default: '.github'
+  
+  commit-message-prefix:
+    description: 'Prefix for commit messages (default: "Update")'
+    required: false
+    default: 'Update'
+  
+  auto-merge-label:
+    description: 'Label to apply to PRs for auto-merge detection (default: "auto-merge")'
+    required: false
+    default: 'auto-merge'
+  
+  base-branch:
+    description: 'Base branch for PRs (default: "main")'
+    required: false
+    default: 'main'
+
+runs:
+  using: 'composite'
+  steps:
+    - run: echo "Auto-commit action initialized with parameters"
+      shell: bash

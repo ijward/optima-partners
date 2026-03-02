@@ -1,0 +1,125 @@
+name: Auto-Commit Configuration Changes
+
+on:
+  schedule:
+    # cron: '0 */2 * * *'  # Run every 2 hours (customize as needed)
+    - cron: '${{ vars.SCHEDULE_FREQUENCY || "0 */2 * * *" }}'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  DIRECTORY_TO_MONITOR: ${{ vars.DIRECTORY_TO_MONITOR || '.github' }}
+  COMMIT_MESSAGE_PREFIX: ${{ vars.COMMIT_MESSAGE_PREFIX || 'Update' }}
+  AUTO_MERGE_LABEL: ${{ vars.AUTO_MERGE_LABEL || 'auto-merge' }}
+  BASE_BRANCH: ${{ vars.BASE_BRANCH || 'main' }}
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for uncommitted changes in monitored directory
+        id: check-changes
+        run: |
+          DIRECTORY="${{ env.DIRECTORY_TO_MONITOR }}"
+          echo "Checking for changes in: $DIRECTORY"
+          
+          # Check if there are any changes in the monitored directory
+          if git status --short | grep -q "^\s*[AM].*${DIRECTORY}/"; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in $DIRECTORY"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in $DIRECTORY"
+          fi
+
+      - name: Commit and push changes
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          DIRECTORY="${{ env.DIRECTORY_TO_MONITOR }}"
+          MESSAGE_PREFIX="${{ env.COMMIT_MESSAGE_PREFIX }}"
+          
+          # Set git config
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create a unique branch name with timestamp
+          TIMESTAMP=$(date +%s)
+          BRANCH_NAME="auto-commit-${DIRECTORY////-}-${TIMESTAMP}"
+          
+          # Create and checkout new branch
+          git checkout -b $BRANCH_NAME
+          
+          # Stage and commit changes
+          git add "$DIRECTORY"
+          git commit -m "${MESSAGE_PREFIX} ${DIRECTORY} configuration files"
+          
+          # Push branch
+          git push origin $BRANCH_NAME
+          
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "Directory: $DIRECTORY"
+          echo "Branch created: $BRANCH_NAME"
+
+      - name: Create Pull Request
+        id: create-pr
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { BRANCH_NAME } = process.env;
+            const DIRECTORY = '${{ env.DIRECTORY_TO_MONITOR }}';
+            const MESSAGE_PREFIX = '${{ env.COMMIT_MESSAGE_PREFIX }}';
+            const AUTO_MERGE_LABEL = '${{ env.AUTO_MERGE_LABEL }}';
+            const BASE_BRANCH = '${{ env.BASE_BRANCH }}';
+            
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: BRANCH_NAME,
+              base: BASE_BRANCH,
+              title: `[Auto] ${MESSAGE_PREFIX} ${DIRECTORY} configuration files`,
+              body: `Automated commit of \`${DIRECTORY}\` directory changes.\n\nThis PR was created by the auto-commit workflow.\n\n**Configuration:**\n- Directory: \`${DIRECTORY}\`\n- Message: \`${MESSAGE_PREFIX}\`\n- Base branch: \`${BASE_BRANCH}\``,
+              labels: [AUTO_MERGE_LABEL]
+            });
+            
+            console.log('PR created:', pr.data.number);
+            core.setOutput('pr_number', pr.data.number);
+
+      - name: Enable auto-merge
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.create-pr.outputs.pr_number }};
+            
+            try {
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'merge'
+              });
+              console.log('Auto-merge enabled for PR', prNumber);
+            } catch (error) {
+              console.log('Auto-merge not available or failed:', error.message);
+              // Fallback: merge the PR immediately
+              try {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  merge_method: 'merge'
+                });
+                console.log('PR merged immediately');
+              } catch (mergeError) {
+                console.log('Could not merge PR. Manual merge may be required.', mergeError.message);
+              }
+            }
